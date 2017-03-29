@@ -4,17 +4,46 @@
 //
 package collector
 
+import "system/memory"
+import "system/disk"
+import "system/cpu"
+import sdClient "github.com/statsd/client"
 import "system/resource"
 import "github.com/statsd/client-namespace"
 import "github.com/statsd/client-interface"
 import "github.com/segmentio/go-log"
 import "sync"
+import "time"
 
 // Collector.
 type Collector struct {
 	Resources []resource.Resource
 	client    statsd.Client
 	wg        sync.WaitGroup
+}
+
+type CollectionParameters struct {
+	StatsdAddress         string
+	Namespace             string
+	Extended              bool
+	MemoryMonitorInterval time.Duration
+	CpuMonitorInterval    time.Duration
+	DiskMonitorInterval   time.Duration
+}
+
+func BuildCollector(parameters CollectionParameters) (*Collector, error) {
+	client, err := sdClient.Dial(parameters.StatsdAddress)
+
+	if err != nil {
+		return nil, err
+	}
+
+	c := New(namespace.New(client, parameters.Namespace))
+	c.Add(memory.New(parameters.MemoryMonitorInterval, parameters.Extended))
+	c.Add(cpu.New(parameters.CpuMonitorInterval, parameters.Extended))
+	c.Add(disk.New(parameters.DiskMonitorInterval))
+
+	return c, nil
 }
 
 // New collector with the given statsd client.

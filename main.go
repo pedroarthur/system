@@ -1,13 +1,8 @@
 package main
 
 import "system/collector"
-import "system/memory"
-import "system/disk"
-import "system/cpu"
-import "github.com/statsd/client-namespace"
 import . "github.com/tj/go-gracefully"
 import "github.com/segmentio/go-log"
-import "github.com/statsd/client"
 import "github.com/tj/docopt"
 import "time"
 import "os"
@@ -43,22 +38,24 @@ func main() {
 
 	log.Info("starting system %s", Version)
 
-	client, err := statsd.Dial(args["--statsd-address"].(string))
-	log.Check(err)
-
-	extended := args["--extended"].(bool)
-
 	name := args["--name"].(string)
+
 	if "hostname" == name {
 		host, err := os.Hostname()
 		log.Check(err)
 		name = host
 	}
 
-	c := collector.New(namespace.New(client, name))
-	c.Add(memory.New(interval(args, "--memory-interval"), extended))
-	c.Add(cpu.New(interval(args, "--cpu-interval"), extended))
-	c.Add(disk.New(interval(args, "--disk-interval")))
+	parameters := collector.CollectionParameters{
+		StatsdAddress:         args["--statsd-address"].(string),
+		Namespace:             name,
+		Extended:              args["--extended"].(bool),
+		CpuMonitorInterval:    interval(args, "--cpu-interval"),
+		MemoryMonitorInterval: interval(args, "--memory-interval"),
+		DiskMonitorInterval:   interval(args, "--disk-interval"),
+	}
+
+	c, _ := collector.BuildCollector(parameters)
 
 	c.Start()
 	Shutdown()
