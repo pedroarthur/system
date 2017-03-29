@@ -1,10 +1,10 @@
 package main
 
-import "github.com/statsd/system/pkg/collector"
-import "github.com/statsd/system/pkg/memory"
+import "system/collector"
+import "system/memory"
+import "system/disk"
+import "system/cpu"
 import "github.com/statsd/client-namespace"
-import "github.com/statsd/system/pkg/disk"
-import "github.com/statsd/system/pkg/cpu"
 import . "github.com/tj/go-gracefully"
 import "github.com/segmentio/go-log"
 import "github.com/statsd/client"
